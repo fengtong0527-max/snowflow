@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>雪境 Snow Flow V0.2 Preview</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#142b3d;touch-action:none}
+canvas{display:block;width:100vw;height:100vh;touch-action:none}
+#hint{position:fixed;left:12px;bottom:10px;color:rgba(255,255,255,.62);font:12px sans-serif;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hint">本地浏览器预览壳 · 不属于正式快手小游戏包</div>
+<script src="preview-core.js"></script>
+<script>
+(function(){
+  const canvas=document.getElementById('game');
+  const ctx=canvas.getContext('2d');
+  let callbacks=null;
+  function resize(){
+    const dpr=Math.min(2,window.devicePixelRatio||1);
+    canvas.width=Math.max(1,Math.floor(window.innerWidth*dpr));
+    canvas.height=Math.max(1,Math.floor(window.innerHeight*dpr));
+  }
+  resize(); window.addEventListener('resize',resize);
+  const platform={
+    raf:fn=>requestAnimationFrame(fn),
+    load:()=>Number(localStorage.getItem('snow-flow-best')||0),
+    save:v=>localStorage.setItem('snow-flow-best',String(v)),
+    bind:(down,move,up,pause)=>{callbacks={down,move,up,pause};}
+  };
+  window.SnowFlowCore(canvas,platform);
+  function point(e){const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};}
+  canvas.addEventListener('pointerdown',e=>{const p=point(e);callbacks.down(p.x,p.y);canvas.setPointerCapture(e.pointerId);});
+  canvas.addEventListener('pointermove',e=>{const p=point(e);callbacks.move(p.x,p.y);});
+  canvas.addEventListener('pointerup',()=>callbacks.up());
+  canvas.addEventListener('pointercancel',()=>callbacks.up());
+  window.addEventListener('blur',()=>callbacks&&callbacks.pause());
+  if(new URLSearchParams(location.search).get('play')==='1') setTimeout(()=>callbacks.down(canvas.width*.5,canvas.height*.5),80);
+})();
+</script>
+</body>
+</html>
